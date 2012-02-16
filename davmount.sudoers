@@ -1,0 +1,8 @@
+# Let root connect to the user's gpg-agent
+Defaults    env_keep+=GPG_AGENT_INFO
+
+# Allow members of the davfs2 group to use davmount as root
+%davfs2     ALL=(root):/usr/local/bin/davmount
+
+# Or if you're lazy like me
+# %davfs2     ALL=(root)NOPASSWD:/usr/local/bin/davmount

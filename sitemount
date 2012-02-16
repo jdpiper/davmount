@@ -1,0 +1,66 @@
+#! /usr/bin/env bash
+
+set -o errexit
+
+splitpath() {
+    SERVERDIR=$(readlink -f "$1")
+    SITEDIR=$(dirname "$SERVERDIR")
+    CLIENTDIR=$(dirname "$SITEDIR")
+    ROOTDIR=$(dirname "$CLIENTDIR")
+
+    SERVER=$(basename "$SERVERDIR")
+    SITE=$(basename "$SITEDIR")
+    CLIENT=$(basename "$CLIENTDIR")
+
+    [[ -r $CLIENTDIR/servers ]] && . "$CLIENTDIR/servers" || (
+        echo "Couldn't read $CLIENTDIR/servers"
+        exit 1
+    )
+    [[ -r $SITEDIR/mountpoints ]] && . "$SITEDIR/mountpoints" || (
+        echo "Couldn't read $SITEDIR/mountpoints"
+        exit 1
+    )
+}
+
+unmountsite() {
+    splitpath "$1"
+
+    for MOUNTPOINT in "${!MOUNTPOINTS[@]}"; do
+        URL="${SERVERS[$SERVER]}/${MOUNTPOINTS[$MOUNTPOINT]}"
+        DIR="$SERVERDIR/$MOUNTPOINT"
+        echo Unounting $DIR
+        sudo davmount -u "$SERVERDIR/$MOUNTPOINT" || true
+    done
+}
+
+mountsite() {
+    splitpath "$1"
+
+    for MOUNTPOINT in "${!MOUNTPOINTS[@]}"; do
+        URL="${SERVERS[$SERVER]}/${MOUNTPOINTS[$MOUNTPOINT]}"
+        DIR="$SERVERDIR/$MOUNTPOINT"
+        echo Mounting $DIR
+        [[ -d $DIR ]] || mkdir -p "$DIR"
+        sudo davmount "$URL" "$DIR"
+    done
+}
+
+declare -A SERVERS
+declare -A MOUNTPOINTS
+
+ACTION=mountsite
+
+while [[ -n $1 ]]; do
+    case $1 in
+        -u)
+            ACTION=unmountsite
+            ;;
+        -m)
+            ACTION=mountsite
+            ;;
+        *)
+            $ACTION "$1"
+    esac
+
+    shift
+done
