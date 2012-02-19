@@ -44,7 +44,7 @@ else
     mkfifo -m 600 "$SECRETS"
 
     (
-        echo -n "$URL "
+        echo -n "\"$URL\" "
         gpg --homedir "$GPG_HOME" $GPG_OPTS -d "$DAVMOUNT_HOME/secrets/$HOST"
     ) > "$SECRETS" &
 
